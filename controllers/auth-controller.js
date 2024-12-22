@@ -81,6 +81,22 @@ router.get('/decrypt/:encryptedText', async (req, res) => {
     }
 });
 
+router.get('/encrypt/:text', (req, res) => {
+    const { text } = req.params;
+
+    if (!text) {
+        return res.status(400).json({ message: 'Text to encrypt is required.' });
+    }
+
+    try {
+        const encryptedText = encrypt(text);
+        res.status(200).json({ encryptedText });
+    } catch (error) {
+        console.error('Error during encryption:', error.message);
+        res.status(500).json({ message: 'Failed to encrypt text.' });
+    }
+});
+
 
 
 module.exports = router ;

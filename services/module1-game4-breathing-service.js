@@ -14,6 +14,7 @@ async function addBreathingPractice(studentData) {
         _id: new ObjectId(),
         date: todayDate,
         techniqueCode: studentData.techniqueCode,
+        type: studentData.type,
         cycles: studentData.cycles,
         time: studentData.time,
         points: 1
@@ -43,6 +44,7 @@ async function addBreathingPractice(studentData) {
     return breathingPracticeEntry;
 }
 
+// Get breathing practices by studentId and sort by latest date
 async function getBreathingPracticesByStudentId(studentId) {
     const db = await connectDB();
     const collection = db.collection('studentTasks');
@@ -55,10 +57,28 @@ async function getBreathingPracticesByStudentId(studentId) {
         throw new Error('No record found for this student');
     }
 
-    return studentRecord.module1.game4;
+    // Sort breathing practices by date (latest first)
+    const sortedPractices = studentRecord.module1.game4.breathingPractises.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    return sortedPractices;
+}
+
+// Delete breathing practice by studentId and practiceId
+async function deleteBreathingPractice(studentId, practiceId) {
+    const db = await connectDB();
+    const collection = db.collection('studentTasks');
+
+    // Remove breathing practice from the student's record
+    const result = await collection.updateOne(
+        { studentId: new ObjectId(studentId) },
+        { $pull: { "module1.game4.breathingPractises": { _id: new ObjectId(practiceId) } } }
+    );
+
+    return result;
 }
 
 module.exports = {
     addBreathingPractice,
-    getBreathingPracticesByStudentId
+    getBreathingPracticesByStudentId,
+    deleteBreathingPractice
 };

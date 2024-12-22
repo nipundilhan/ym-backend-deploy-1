@@ -175,7 +175,7 @@ async function findStudentGameMarks(studentId) {
 
 
     // Generate complete moods array (recorded + missing days)
-    const completeMoods = generateCompleteMoods(result.moods);
+    const completeMoods = generateCompleteMoods(result.moods , stdnt.signupDate);
 
     
     const response = {
@@ -183,6 +183,7 @@ async function findStudentGameMarks(studentId) {
         avatarCode : stdnt.avatarCode,
         dob : stdnt.dob,
         gender : stdnt.gender,
+        email : stdnt.email,
         examDate : moduleDetails.examDate,
         totalMarks: calculateTotalMarks(result) ,
         //game1CompletedTasks: result.module1.game1.tasks.length,
@@ -329,7 +330,7 @@ function calculateGame2TotalLikes(result) {
 }
 
 
-
+/*
 function generateCompleteMoods(moods) {
     // Helper function to format date to 'yyyy-mm-dd'
     const formatDate = (date) => date.toISOString().split('T')[0];
@@ -362,6 +363,53 @@ function generateCompleteMoods(moods) {
     });
 
     return completeMoods;
+}*/
+
+function generateCompleteMoods(moods, signupDate) {
+    // Helper function to format date to 'yyyy-mm-dd'
+    const formatDate = (date) => date.toISOString().split('T')[0];
+
+    // Helper function to get last 30 days or from signup date to today as an array of dates
+    const getDateRange = (signupDate) => {
+        const dates = [];
+        const today = new Date();
+        const startDate = new Date(signupDate);
+        
+        // If the signup date is within a month, create a range from the signup date to today
+        if ((today - startDate) <= (30 * 24 * 60 * 60 * 1000)) { // within 30 days
+            for (let i = 0; i <= Math.floor((today - startDate) / (24 * 60 * 60 * 1000)); i++) {
+                const d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                dates.push(formatDate(d));
+            }
+        } else {
+            // If signup date is older than 30 days, get the last 30 days
+            for (let i = 0; i < 30; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                dates.push(formatDate(d));
+            }
+        }
+        return dates;
+    };
+
+    // Extract recorded moods
+    const recordedMoods = moods.map(mood => ({
+        date: formatDate(new Date(mood.date)),
+        mood: mood.mood
+    }));
+
+    // Get date range based on signup date
+    const dateRange = getDateRange(signupDate);
+
+    // Create a complete moods array, filling in missing days with the dummy mood
+    const completeMoods = dateRange.map(date => {
+        const recordedMood = recordedMoods.find(m => m.date === date);
+        return recordedMood ? recordedMood : { date, mood: 'missed' };
+    });
+
+    // Order the moods with the latest first
+    return completeMoods.reverse();
 }
 
 async function shareBadge(data) {
