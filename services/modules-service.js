@@ -409,7 +409,7 @@ function generateCompleteMoods(moods, signupDate) {
     });
 
     // Order the moods with the latest first
-    return completeMoods.reverse();
+    return completeMoods;
 }
 
 async function shareBadge(data) {
