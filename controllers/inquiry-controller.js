@@ -1,6 +1,9 @@
 // inquiry-controller.js
 const express = require('express');
-const { addInquiry,   getAllInquiries, findByEmail, findByCompanyAndStatus , findByInquiryId , deleteInquiryById , addInquiryComment , changeInquiryStatus , addInquiryMessage , getFirst10Inquiries  } = require('../services/inquiry-service');
+const { addInquiry,   getAllInquiries, findByEmail, findByCompanyAndStatus ,
+     findByInquiryId , deleteInquiryById , addInquiryComment , changeInquiryStatus , addInquiryMessage , getFirst10Inquiries ,
+     generateCompanyCategoryPriorityReport, generateInquiryReport , sendReport2 } = require('../services/inquiry-service');
+
 const router = express.Router();
 const multer = require('multer');
 
@@ -15,6 +18,8 @@ router.post('/', upload.array('attachments'), async (req, res) => {
         const inquiryData = {
             title: req.body.title,
             companyCode: req.body.companyCode,
+            category: req.body.category,
+            priorityLevel: req.body.priorityLevel,
             description: req.body.description,
             customerName: req.body.customerName,
             email: req.body.email,
@@ -57,10 +62,10 @@ router.get('/findByEmail/:email', async (req, res) => {
 });
 
 // Route to find inquiries by company code and status
-router.get('/findByCompanyAndStatus/:companyCode/:status', async (req, res) => {
-    const { companyCode, status } = req.params;
+router.get('/findByCompanyAndStatus/:companyCode/:status/:dep?', async (req, res) => {
+    const { companyCode, status , dep } = req.params;
     try {
-        const inquiries = await findByCompanyAndStatus(companyCode, status);
+        const inquiries = await findByCompanyAndStatus(companyCode, status , dep || null);
         res.status(200).json(inquiries);
     } catch (error) {
         console.error('Error fetching inquiries by company code and status:', error);
@@ -153,6 +158,44 @@ router.get('/getProducts', async (req, res) => {
         res.status(200).json(inquiries); // Send the inquiries with attachments
     } catch (error) {
         console.error('Error fetching first 10 inquiries:', error);
+        res.status(400).json({ message: error.message });
+    }
+});
+
+router.get('/report1/:year/:month', async (req, res) => {
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    try {
+        const report = await generateInquiryReport(year , month );
+        res.status(200).json(report);
+    } catch (error) {
+        console.error('Error fetching inquiries by email:', error);
+        res.status(400).json({ message: error.message });
+    }
+});
+
+router.get('/report2/:companyCode/:year/:month', async (req, res) => {
+    const company = req.params.companyCode;
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    try {
+        const report = await generateCompanyCategoryPriorityReport(company , year , month );
+        res.status(200).json(report);
+    } catch (error) {
+        console.error('Error fetching inquiries by email:', error);
+        res.status(400).json({ message: error.message });
+    }
+});
+
+router.get('/send-report2/:companyCode/:year/:month', async (req, res) => {
+    const company = req.params.companyCode;
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    try {
+        const report = await sendReport2(company , year , month );
+        res.status(200).json(report);
+    } catch (error) {
+        console.error('Error fetching inquiries by email:', error);
         res.status(400).json({ message: error.message });
     }
 });

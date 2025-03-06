@@ -55,7 +55,7 @@ async function authenticate(req, res) {
         // Generate JWT token
         const token = jwt.sign({ username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
 
-        res.json({ user: { username: user.username, userId : user._id,  role: user.role , avatarCode :  user.avatarCode }, jwtToken: token });
+        res.json({ user: { username: user.username, userId : user._id,  role: user.role , avatarCode :  user.avatarCode , companyCode :  user.company , department :  user.department}, jwtToken: token });
     } catch (error) {
         console.error('Error during authentication:', error);
         res.status(500).json({ message: 'Internal Server Error' });

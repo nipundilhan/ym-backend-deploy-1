@@ -271,14 +271,93 @@ async function findStudentGameMarks(studentId) {
         },
         moods: completeMoods,
     };
-    */
+    
 
     // Check if game2 exists before adding it to the response
     if (result.module1.game2) {
         response.game2Marks = result.module1.game2.gamePoints;
-    }
+    }*/
 
     return response;
+}
+
+async function findAllStudentsGameMarks() {
+    const moduleDetails = await findByModuleCode("MD01");
+
+    const gameDetails = {
+        GM01: await getGameDetails("MD01", "GM01"),
+        GM02: await getGameDetails("MD01", "GM02"),
+        GM03: await getGameDetails("MD01", "GM03"),
+        GM04: await getGameDetails("MD01", "GM04"),
+        GM05: await getGameDetails("MD01", "GM05"),
+    };
+
+    const db = await connectDB();
+    const collection = db.collection('studentTasks');
+
+    // Fetch all student records
+    const students = await collection.find({}).toArray();
+
+    if (!students || students.length === 0) {
+        throw new Error('No students found');
+    }
+
+    const responses = await Promise.all(
+        students.map(async (student) => {
+            const stdnt = await getUserByIdLocal(student.studentId);
+
+            // Generate complete moods array (recorded + missing days)
+            //const completeMoods = generateCompleteMoods(student.moods, stdnt.signupDate);
+
+            return {
+                taskId: student._id,
+                dob: stdnt.dob,
+                name: stdnt.username,
+                gender: stdnt.gender,
+                email: stdnt.email,
+                totalMarks: calculateTotalMarks(student),
+                game1CompletedTasks: student.module1.game1.gamePoints,
+                game1Marks: student.module1.game1.gamePoints,
+                game1Margin1: gameDetails.GM01.achievementMargin1,
+                game1Margin2: gameDetails.GM01.achievementMargin2,
+                game1Badge1Shared: student.module1.game1.badge1Shared,
+                game1Badge2Shared: student.module1.game1.badge2Shared,
+                game1Badge3Shared: student.module1.game1.badge3Shared,
+
+                game2Marks: student.module1.game2?.gamePoints || 0,
+                game2Likes: calculateGame2TotalLikes(student),
+                // game2Badge1Shared: student.module1.game2?.badge1Shared || false,
+                // game2Badge2Shared: student.module1.game2?.badge2Shared || false,
+                // game2Badge3Shared: student.module1.game2?.badge3Shared || false,
+
+                game3Marks: student.module1.game3?.gamePoints || 0,
+                game3Likes: calculateGame3TotalLikes(student),
+                // game3Margin1: gameDetails.GM03.achievementMargin1,
+                // game3Margin2: gameDetails.GM03.achievementMargin2,
+                // game3LikesMargin: gameDetails.GM03.likesMargin,
+                // game3Badge1Shared: student.module1.game3?.badge1Shared || false,
+                // game3Badge2Shared: student.module1.game3?.badge2Shared || false,
+                // game3Badge3Shared: student.module1.game3?.badge3Shared || false,
+
+                game4Marks: student.module1.game4?.gamePoints || 0,
+                // game4Margin1: gameDetails.GM04.achievementMargin1,
+                // game4Margin2: gameDetails.GM04.achievementMargin2,
+                // game4Badge1Shared: student.module1.game4?.badge1Shared || false,
+                // game4Badge2Shared: student.module1.game4?.badge2Shared || false,
+                // game4Badge3Shared: student.module1.game4?.badge3Shared || false,
+
+                game5Marks: student.module1.game5?.gamePoints || 0,
+                // game5Margin1: gameDetails.GM05.achievementMargin1,
+                // game5Margin2: gameDetails.GM05.achievementMargin2,
+                // game5badge1Shared: student.module1.game5?.badge1Shared || false,
+                // game5badge2Shared: student.module1.game5?.badge2Shared || false,
+                // game5badge3Shared: student.module1.game5?.badge3Shared || false,
+
+            };
+        })
+    );
+
+    return responses;
 }
 
 async function getUserByIdLocal(id) {
